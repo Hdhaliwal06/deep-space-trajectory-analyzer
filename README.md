@@ -1,13 +1,6 @@
 # Deep Space Trajectory Analyzer
 
-
-This version is intentionally simple:
-
-- One C source file
-- Two local data files
-- No network calls required
-- Compile with `make`
-- Query Voyager 1 or Voyager 2 by any date
+A C project that reads NASA HORIZONS-style Voyager ephemeris files and prints a mission status report.
 
 ## Build
 
@@ -15,11 +8,25 @@ This version is intentionally simple:
 make
 ```
 
+## Update Data
+
+Refresh the local Voyager ephemeris cache from NASA JPL HORIZONS:
+
+```bash
+make update-data
+```
+
+The updater writes:
+
+- `data/voyager1.txt`
+- `data/voyager2.txt`
+
+The analyzer itself stays offline-friendly: it reads the latest local files instead of calling NASA every time it runs.
+
 ## Run
 
 ```bash
 ./voyager voyager1 2024-Jan-01
-./voyager voyager1 2024-Mar-15
 ./voyager voyager1 2025-Jan-01
 ./voyager voyager2 2024-Jun-01
 ```
@@ -38,9 +45,20 @@ Then it computes:
 - Speed relative to the Sun
 - One-way light travel time based on that distance
 
+## Data Source
+
+The `scripts/update_data.py` script queries the NASA JPL HORIZONS API for heliocentric Voyager state vectors:
+
+- Voyager 1: `COMMAND='-31'`
+- Voyager 2: `COMMAND='-32'`
+- Center: Sun, `CENTER='500@10'`
+- Ephemeris type: `VECTORS`
+- Units: `KM-S`
+- Step size: `30 d`
+
 ## Data Format
 
-The files in `data/` use a tiny HORIZONS-style structure:
+The files in `data/` use a small HORIZONS-style structure:
 
 ```text
 $$SOE
@@ -54,6 +72,4 @@ Columns:
 date, x_km, y_km, z_km, vx_km_s, vy_km_s, vz_km_s
 ```
 
-The included data is a small learning sample shaped like NASA HORIZONS vector output. The program interpolates between the sample rows when your date falls inside the file range, and estimates beyond the range using the nearest record's velocity.
-
-To make the project more resume-ready, replace these rows with a fuller HORIZONS export for Voyager 1 and Voyager 2.
+The included data is generated from NASA HORIZONS vector output. The program interpolates between rows when your date falls inside the file range, and estimates beyond the range using the nearest record's velocity.

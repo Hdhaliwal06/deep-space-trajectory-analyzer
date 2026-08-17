@@ -4,7 +4,7 @@
 #include <string.h>
 
 #define MAX_LINE 256
-#define MAX_RECORDS 64
+#define INITIAL_RECORD_CAPACITY 128
 #define AU_KM 149597870.7
 #define LIGHT_SPEED_KM_S 299792.458
 
@@ -12,6 +12,7 @@ typedef struct {
     char date[20];
     int day_number;
     int estimated;
+    int interpolated;
     double x_km;
     double y_km;
     double z_km;
@@ -21,9 +22,49 @@ typedef struct {
 } EphemerisRecord;
 
 typedef struct {
-    EphemerisRecord records[MAX_RECORDS];
+    EphemerisRecord *records;
     int count;
+    int capacity;
 } MissionData;
+
+int init_mission_data(MissionData *data) {
+    data->records = malloc((size_t)INITIAL_RECORD_CAPACITY * sizeof(EphemerisRecord));
+    if (data->records == NULL) {
+        data->count = 0;
+        data->capacity = 0;
+        return 0;
+    }
+
+    data->count = 0;
+    data->capacity = INITIAL_RECORD_CAPACITY;
+    return 1;
+}
+
+void free_mission_data(MissionData *data) {
+    free(data->records);
+    data->records = NULL;
+    data->count = 0;
+    data->capacity = 0;
+}
+
+int append_mission_record(MissionData *data, EphemerisRecord record) {
+    EphemerisRecord *expanded_records;
+    int new_capacity;
+
+    if (data->count == data->capacity) {
+        new_capacity = data->capacity * 2;
+        expanded_records = realloc(data->records, (size_t)new_capacity * sizeof(EphemerisRecord));
+        if (expanded_records == NULL) {
+            return 0;
+        }
+
+        data->records = expanded_records;
+        data->capacity = new_capacity;
+    }
+
+    data->records[data->count++] = record;
+    return 1;
+}
 
 double vector_length(double a, double b, double c) {
     return sqrt((a * a) + (b * b) + (c * c));
@@ -148,11 +189,15 @@ int load_mission_data(const char *filename, MissionData *data) {
             break;
         }
 
-        if (inside_data_section && data->count < MAX_RECORDS) {
+        if (inside_data_section) {
             EphemerisRecord record;
 
             if (parse_record(line, &record)) {
-                data->records[data->count++] = record;
+                if (!append_mission_record(data, record)) {
+                    printf("Could not allocate memory for mission data.\n");
+                    fclose(file);
+                    return 0;
+                }
             }
         }
     }
@@ -168,6 +213,7 @@ int interpolate_record(const MissionData *data, int target_day_number, Ephemeris
         if (data->records[i].day_number == target_day_number) {
             *result = data->records[i];
             result->estimated = 0;
+            result->interpolated = 0;
             return 1;
         }
     }
@@ -184,6 +230,7 @@ int interpolate_record(const MissionData *data, int target_day_number, Ephemeris
             snprintf(result->date, sizeof(result->date), "interpolated");
             result->day_number = target_day_number;
             result->estimated = 0;
+            result->interpolated = 1;
             result->x_km = a->x_km + fraction * (b->x_km - a->x_km);
             result->y_km = a->y_km + fraction * (b->y_km - a->y_km);
             result->z_km = a->z_km + fraction * (b->z_km - a->z_km);
@@ -203,6 +250,7 @@ int interpolate_record(const MissionData *data, int target_day_number, Ephemeris
         snprintf(result->date, sizeof(result->date), "estimated");
         result->day_number = target_day_number;
         result->estimated = 1;
+        result->interpolated = 0;
         result->x_km = a->x_km + a->vx_km_s * seconds;
         result->y_km = a->y_km + a->vy_km_s * seconds;
         result->z_km = a->z_km + a->vz_km_s * seconds;
@@ -218,6 +266,7 @@ int interpolate_record(const MissionData *data, int target_day_number, Ephemeris
         snprintf(result->date, sizeof(result->date), "estimated");
         result->day_number = target_day_number;
         result->estimated = 1;
+        result->interpolated = 0;
         result->x_km = a->x_km + a->vx_km_s * seconds;
         result->y_km = a->y_km + a->vy_km_s * seconds;
         result->z_km = a->z_km + a->vz_km_s * seconds;
@@ -240,8 +289,10 @@ void print_report(const char *spacecraft, EphemerisRecord record) {
     printf("Date:       %s\n", record.date);
     if (record.estimated) {
         printf("Mode:       estimated from nearest mission data point\n");
-    } else {
+    } else if (record.interpolated) {
         printf("Mode:       interpolated from mission data points\n");
+    } else {
+        printf("Mode:       exact mission data point\n");
     }
     printf("\n");
     printf("Position relative to Sun:\n");
@@ -264,7 +315,7 @@ void print_report(const char *spacecraft, EphemerisRecord record) {
 
 int main(int argc, char *argv[]) {
     const char *filename;
-    MissionData mission = {0};
+    MissionData mission;
     int target_day_number;
     EphemerisRecord record;
 
@@ -274,26 +325,35 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+    if (!init_mission_data(&mission)) {
+        printf("Could not allocate memory for mission data.\n");
+        return 1;
+    }
+
     filename = data_file_for_spacecraft(argv[1]);
     if (filename == NULL) {
         printf("Unknown spacecraft: %s\n", argv[1]);
         printf("Choose voyager1 or voyager2.\n");
+        free_mission_data(&mission);
         return 1;
     }
 
     if (!load_mission_data(filename, &mission)) {
         printf("No usable mission data found in %s.\n", filename);
+        free_mission_data(&mission);
         return 1;
     }
 
     if (!parse_date_string(argv[2], &target_day_number)) {
         printf("Invalid date format: %s\n", argv[2]);
         printf("Use the format YYYY-Mon-DD, like 2024-Jan-01.\n");
+        free_mission_data(&mission);
         return 1;
     }
 
     if (!interpolate_record(&mission, target_day_number, &record)) {
         printf("Date not found or error in data file.\n");
+        free_mission_data(&mission);
         return 1;
     }
 
@@ -302,5 +362,6 @@ int main(int argc, char *argv[]) {
     }
 
     print_report(argv[1], record);
+    free_mission_data(&mission);
     return 0;
 }

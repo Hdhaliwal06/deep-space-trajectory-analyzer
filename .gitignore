@@ -1,3 +1,4 @@
 voyager
 *.o
 .DS_Store
+src/main
