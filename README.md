@@ -13,6 +13,14 @@ make web
 
 Then open `http://127.0.0.1:8000`. The web UI invokes the compiled C analyzer; it does not duplicate its calculations.
 
+If port 8000 is already in use, choose another local port:
+
+```bash
+PORT=8080 make web
+```
+
+Open the matching address, such as `http://127.0.0.1:8080`. Stop the server with `Ctrl-C`.
+
 ## Data pipeline
 
 `scripts/update_data.py` requests NASA JPL HORIZONS vectors for Voyager 1 (`-31`) and Voyager 2 (`-32`) relative to the Sun (`CENTER='500@10'`), in km and km/s. It stores a compact local cache in:
