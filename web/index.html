@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Deep Space Trajectory Analyzer</title><link rel="stylesheet" href="styles.css"></head>
+<body><main>
+  <p class="eyebrow">NASA JPL HORIZONS · LOCAL ANALYSIS</p>
+  <h1>Deep Space<br>Trajectory Analyzer</h1>
+  <p class="intro">Explore a Voyager heliocentric state vector and the mission-scale implications of distance.</p>
+  <form id="query">
+    <label>Spacecraft <select name="spacecraft"><option value="voyager1">Voyager 1</option><option value="voyager2">Voyager 2</option></select></label>
+    <label>Date <input name="date" value="2024-Jan-01" pattern="\d{4}-[A-Z][a-z]{2}-\d{2}" required></label>
+    <button>Analyze trajectory</button>
+  </form>
+  <p id="status" role="status">Uses cached NASA JPL HORIZONS data. No live API call is made.</p>
+  <section id="results" hidden><div class="mode" id="mode"></div><div class="metrics">
+    <article><span>Solar distance</span><strong id="au"></strong><small id="km"></small></article>
+    <article><span>Heliocentric speed</span><strong id="speed"></strong><small>km/s</small></article>
+    <article><span>One-way light time</span><strong id="delay"></strong><small>hours</small></article>
+  </div><article class="state"><h2>State vector</h2><pre id="vector"></pre></article><p class="source" id="source"></p></section>
+  <aside><strong>Scope note:</strong> This educational interface uses exact records, linear interpolation, or constant-velocity extrapolation. It is not flight-navigation software.</aside>
+</main><script src="app.js"></script></body></html>

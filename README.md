@@ -1,75 +1,51 @@
 # Deep Space Trajectory Analyzer
 
-A C project that reads NASA HORIZONS-style Voyager ephemeris files and prints a mission status report.
-
-## Build
-
-```bash
-make
-```
-
-## Update Data
-
-Refresh the local Voyager ephemeris cache from NASA JPL HORIZONS:
-
-```bash
-make update-data
-```
-
-The updater writes:
-
-- `data/voyager1.txt`
-- `data/voyager2.txt`
-
-The analyzer itself stays offline-friendly: it reads the latest local files instead of calling NASA every time it runs.
+An educational C analyzer for Voyager heliocentric state vectors from NASA JPL HORIZONS. It reports distance from the Sun, speed, and one-way light time for an exact, interpolated, or estimated date. A small Python standard-library web server exposes the same C calculation through a browser UI.
 
 ## Run
 
 ```bash
-./voyager voyager1 2024-Jan-01
-./voyager voyager1 2025-Jan-01
-./voyager voyager2 2024-Jun-01
+make
+./build/voyager voyager1 2024-Jan-01
+./build/voyager voyager2 2024-Jun-01 --json
+make web
 ```
 
-## What It Calculates
+Then open `http://127.0.0.1:8000`. The web UI invokes the compiled C analyzer; it does not duplicate its calculations.
 
-The program reads:
+## Data pipeline
 
-- Position: `x`, `y`, `z` in kilometers
-- Velocity: `vx`, `vy`, `vz` in kilometers per second
+`scripts/update_data.py` requests NASA JPL HORIZONS vectors for Voyager 1 (`-31`) and Voyager 2 (`-32`) relative to the Sun (`CENTER='500@10'`), in km and km/s. It stores a compact local cache in:
 
-Then it computes:
+- `data/Voyager1.txt`
+- `data/Voyager2.txt`
 
-- Distance from the Sun in kilometers
-- Distance from the Sun in astronomical units
-- Speed relative to the Sun
-- One-way light travel time based on that distance
+Refresh the cache with `make update-data`. The analyzer stays offline at runtime for reproducibility and predictable behavior.
 
-## Data Source
+## Methods and limits
 
-The `scripts/update_data.py` script queries the NASA JPL HORIZONS API for heliocentric Voyager state vectors:
+- Exact cached date: returns the source record.
+- Date between cached records: linearly interpolates position and velocity components.
+- Date outside the cache: extrapolates from the nearest record at constant velocity and prints an explicit warning.
 
-- Voyager 1: `COMMAND='-31'`
-- Voyager 2: `COMMAND='-32'`
-- Center: Sun, `CENTER='500@10'`
-- Ephemeris type: `VECTORS`
-- Units: `KM-S`
-- Step size: `30 d`
+Distance and speed are Euclidean magnitudes of the three-dimensional position and velocity vectors. AU uses 149,597,870.7 km; light time uses 299,792.458 km/s.
 
-## Data Format
+This is not flight-navigation software. Linear interpolation and especially constant-velocity extrapolation omit gravitational perturbations, maneuvers, and uncertainty modeling. For navigation or high-precision science, query an authoritative ephemeris at the requested time or use a validated astrodynamics propagator.
 
-The files in `data/` use a small HORIZONS-style structure:
+## Quality checks
+
+```bash
+make test
+```
+
+Tests cover exact lookup, interpolation, extrapolation, invalid spacecraft selection, and invalid calendar dates. The C parser also rejects out-of-order ephemeris records.
+
+## Project structure
 
 ```text
-$$SOE
-2024-Jan-01, 21130000000, -11900000000, 920000000, 10.20, -7.15, 0.18
-$$EOE
+main.c                 C parsing, date resolution, and calculations
+scripts/update_data.py NASA HORIZONS cache updater
+scripts/web.py         local API bridge to the compiled C program
+web/                   browser interface
+tests/                 end-to-end analyzer tests
 ```
-
-Columns:
-
-```text
-date, x_km, y_km, z_km, vx_km_s, vy_km_s, vz_km_s
-```
-
-The included data is generated from NASA HORIZONS vector output. The program interpolates between rows when your date falls inside the file range, and estimates beyond the range using the nearest record's velocity.

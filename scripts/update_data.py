@@ -33,12 +33,12 @@ SPACECRAFT = {
     "Voyager1": {
         "command": "-31",
         "start": "1977-Sep-05 14:00",
-        "output": DATA_DIR / "voyager1.txt",
+        "output": DATA_DIR / "Voyager1.txt",
     },
     "Voyager2": {
         "command": "-32",
         "start": "1977-Aug-20 15:33",
-        "output": DATA_DIR / "voyager2.txt",
+        "output": DATA_DIR / "Voyager2.txt",
     },
 }
 

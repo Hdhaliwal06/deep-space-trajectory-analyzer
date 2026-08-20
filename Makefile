@@ -1,14 +1,27 @@
-CC = gcc
-CFLAGS = -Wall -Wextra -std=c11
+CC = cc
+CFLAGS = -Wall -Wextra -Wpedantic -std=c11
 PYTHON = python3
+BUILD_DIR = build
+BINARY = $(BUILD_DIR)/voyager
 
-.PHONY: clean update-data
+.PHONY: all clean update-data test web
 
-voyager: main.c
-	$(CC) $(CFLAGS) main.c -o voyager -lm
+all: $(BINARY)
+
+$(BINARY): main.c | $(BUILD_DIR)
+	$(CC) $(CFLAGS) main.c -o $(BINARY) -lm
+
+$(BUILD_DIR):
+	mkdir -p $(BUILD_DIR)
 
 update-data:
 	$(PYTHON) scripts/update_data.py
 
+test: $(BINARY)
+	$(PYTHON) -m unittest discover -s tests -v
+
+web: $(BINARY)
+	$(PYTHON) scripts/web.py
+
 clean:
-	rm -f voyager
+	rm -rf $(BUILD_DIR)
