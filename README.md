@@ -48,12 +48,3 @@ make test
 
 Tests cover exact lookup, interpolation, extrapolation, invalid spacecraft selection, and invalid calendar dates. The C parser also rejects out-of-order ephemeris records.
 
-## Project structure
-
-```text
-main.c                 C parsing, date resolution, and calculations
-scripts/update_data.py NASA HORIZONS cache updater
-scripts/web.py         local API bridge to the compiled C program
-web/                   browser interface
-tests/                 end-to-end analyzer tests
-```
