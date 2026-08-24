@@ -1,8 +1,8 @@
 # Deep Space Trajectory Analyzer
 
-An educational C analyzer for Voyager heliocentric state vectors from NASA JPL HORIZONS. It reports distance from the Sun, speed, and one-way light time for an exact, interpolated, or estimated date. A small Python standard-library web server exposes the same C calculation through a browser UI.
+A project I made to analzye Voyager heliocentric positions from NASA JPL HORIZONS. It reports distance from the Sun, speed, and one-way light time for an exact, interpolated, or estimated date. I've also expanded on it with an updater and UI!
 
-## Run
+## To run
 
 ```bash
 make
