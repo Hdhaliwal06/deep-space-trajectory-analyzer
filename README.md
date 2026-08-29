@@ -19,7 +19,7 @@ If port 8000 is already in use, choose another local port:
 PORT=8080 make web
 ```
 
-Open the matching address, such as `http://127.0.0.1:8080`. Stop the server with `Ctrl-C`.
+Open the matching address, such as `http://127.0.0.1:8080`. You can stop the server with `Ctrl-C`.
 
 ## Data pipeline
 
