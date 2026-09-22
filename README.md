@@ -1,6 +1,6 @@
 # Deep Space Trajectory Analyzer
 
-Hello! This is a project I made to analzye Voyager heliocentric positions from NASA JPL HORIZONS, a bit of a passion of mine. It reports distance from the Sun, speed, and one-way light time for an exact, interpolated, or estimated date. I've also expanded on it with an updater and UI!
+Hello! This is a project I made to analzye Voyager heliocentric positions from NASA JPL HORIZONS, a bit of a passion of mine. It reports distance from the Sun, speed, and one-way light time for an exact, interpolated, or estimated date depending on the user's preference. I've also expanded on it with an updater and UI!
 
 ## To run
 
